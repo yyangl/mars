@@ -1,7 +1,9 @@
 package server
 
 import (
+	"context"
 	"fmt"
+	"github.com/yyangl/mars/connect"
 	"net"
 )
 
@@ -17,28 +19,35 @@ func (t *tcpServer) Init(opts ...Option) {
 	for _, o := range opts {
 		o(&options)
 	}
+	t.opts = options
 }
 
-func (t *tcpServer) Run() error {
-	listener, err := net.Listen(t.opts.Net, fmt.Sprint("%s:%d", t.opts.Addr, t.opts.Port))
+func (t *tcpServer) Run(ctx context.Context) error {
+	fmt.Println("[Mars] server run ...")
+	listener, err := net.Listen(t.opts.Net, fmt.Sprintf("%s:%d", t.opts.Addr, t.opts.Port))
 	if err != nil {
 		return err
 	}
+	fmt.Printf("[Mars] server run addr %s", listener.Addr().String())
 	go func() {
 		for {
-			_, err := listener.Accept()
-			if err != nil {
-				//TODO 通知主进程退出
-				_ = listener.Close()
+			conn, err := listener.Accept()
+			if err == nil {
+				//通知主进程退出
+				//_ = listener.Close()
+				fmt.Printf("[Mars] accept client err %v\n", err)
+				ctx.Done()
+				break
 			}
-			// TODO 通知主进程有新的客户端进入
+			// 通知主进程有新的客户端进入
+			t.opts.CChan <- connect.NewTcpConn(conn.(net.Conn))
 		}
 	}()
 	return nil
 }
 
 func (t *tcpServer) Stop() error {
-	panic("implement me")
+	return t.listener.Close()
 }
 
 func (t *tcpServer) String() string {
@@ -53,6 +62,6 @@ func newOptions() Options {
 	return Options{
 		Addr: "",
 		Port: 0,
-		Net:  "tcp",
+		Net:  "tcp4",
 	}
 }

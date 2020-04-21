@@ -1,23 +1,31 @@
-package mars
+package connect
 
 import (
 	"fmt"
-	server2 "github.com/yyangl/mars/server"
 	"io"
 	"net"
 	"sync"
 )
 
 type tcpConn struct {
-	id     uint32
-	conn   net.TCPConn
-	mux    sync.Mutex
-	server server2.Server
-	buf    []byte
+	id   uint32
+	conn net.Conn
+	mux  sync.Mutex
+	//buf    []byte
+}
+
+func NewTcpConn(conn net.Conn) *tcpConn {
+	return &tcpConn{
+		conn: conn,
+		mux:  sync.Mutex{},
+	}
 }
 
 func (t *tcpConn) Send(bytes []byte) (int, error) {
-	return t.conn.Write(bytes)
+	t.mux.Lock()
+	defer t.mux.Unlock()
+	n, err := t.conn.Write(bytes)
+	return n, err
 }
 
 //func (t *tcpConn) Read() ([]byte, error) {
@@ -32,9 +40,9 @@ func (t *tcpConn) Run() error {
 	go func(t *tcpConn) {
 		for {
 			buf := make([]byte, 1024)
-			n, err := t.conn.Read(buf)
+			_, err := t.conn.Read(buf)
 			if err == io.EOF {
-				t.server.Close(t.id)
+				//t.server.Close(t.id)
 				_ = t.conn.Close()
 				break
 			} else if err != nil && err != io.EOF {
@@ -42,9 +50,9 @@ func (t *tcpConn) Run() error {
 				_ = t.conn.Close()
 				break
 			} else {
-				if t.server.Recv(buf[:n]) {
-
-				}
+				//if t.server.Recv(buf[:n]) {
+				//
+				//}
 			}
 		}
 	}(t)

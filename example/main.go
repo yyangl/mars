@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/yyangl/mars/logger"
-	"log"
+	"fmt"
+	"github.com/yyangl/mars"
 )
 
 func main() {
 	//fmt.Printf("hello")
-	log.Fatal()
-	logger.Info("test")
+	server := mars.NewServer()
+	if err := server.Run(); err != nil {
+		fmt.Printf("server run error err %v", err)
+	}
 }
-
-

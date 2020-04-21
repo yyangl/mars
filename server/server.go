@@ -1,20 +1,14 @@
 package server
 
+import "context"
+
 type (
 	Server interface {
 		Init(...Option)
-		Run() error
+		Run(context.Context) error
 		Stop() error
 		String() string
 	}
-
-	Conn interface {
-		Send([]byte) (int, error)
-		//Read() ([]byte, error)
-		GetID() uint32
-		Run() error
-	}
-	HandlerFunc func(Conn)
 
 	Option func(*Options)
 )
